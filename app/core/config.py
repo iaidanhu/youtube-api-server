@@ -24,5 +24,9 @@ class Settings:
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
+    # Proxy settings
+    PROXY_USERNAME: str = os.getenv("PROXY_USERNAME")
+    PROXY_PASSWORD: str = os.getenv("PROXY_PASSWORD")
+
 # Create settings instance
 settings = Settings()

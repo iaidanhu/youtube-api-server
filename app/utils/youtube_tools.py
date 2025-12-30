@@ -1,10 +1,12 @@
 import json
+from app.core.config import settings
 from urllib.parse import urlparse, parse_qs, urlencode
 from urllib.request import urlopen
 from typing import Optional, List
 
 from fastapi import HTTPException
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 
 class YouTubeTools:
     @staticmethod
@@ -77,7 +79,20 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            ytt_api = YouTubeTranscriptApi()
+            # Initialize API with proxy configuration from settings
+            proxy_username = settings.PROXY_USERNAME
+            proxy_password = settings.PROXY_PASSWORD
+            
+            if proxy_username and proxy_password:
+                ytt_api = YouTubeTranscriptApi(
+                    proxy_config=WebshareProxyConfig(
+                        proxy_username=proxy_username,
+                        proxy_password=proxy_password,
+                    )
+                )
+            else:
+                ytt_api = YouTubeTranscriptApi()
+            
             if languages:
                 fetched_transcript = ytt_api.fetch(video_id, languages=languages)
             else:
@@ -103,7 +118,20 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            ytt_api = YouTubeTranscriptApi()
+            # Initialize API with proxy configuration from settings
+            proxy_username = settings.PROXY_USERNAME
+            proxy_password = settings.PROXY_PASSWORD
+            
+            if proxy_username and proxy_password:
+                ytt_api = YouTubeTranscriptApi(
+                    proxy_config=WebshareProxyConfig(
+                        proxy_username=proxy_username,
+                        proxy_password=proxy_password,
+                    )
+                )
+            else:
+                ytt_api = YouTubeTranscriptApi()
+            
             fetched_transcript = ytt_api.fetch(video_id, languages=languages or ["en"])
             timestamps = []
             for snippet in fetched_transcript:
