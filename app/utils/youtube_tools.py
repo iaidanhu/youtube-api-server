@@ -77,14 +77,14 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            captions = None
+            ytt_api = YouTubeTranscriptApi()
             if languages:
-                captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+                fetched_transcript = ytt_api.fetch(video_id, languages=languages)
             else:
-                captions = YouTubeTranscriptApi.get_transcript(video_id)
+                fetched_transcript = ytt_api.fetch(video_id)
             
-            if captions:
-                return " ".join(line["text"] for line in captions)
+            if fetched_transcript:
+                return " ".join(snippet.text for snippet in fetched_transcript)
             return "No captions found for video"
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error getting captions for video: {str(e)}")
@@ -103,12 +103,13 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages or ["en"])
+            ytt_api = YouTubeTranscriptApi()
+            fetched_transcript = ytt_api.fetch(video_id, languages=languages or ["en"])
             timestamps = []
-            for line in captions:
-                start = int(line["start"])
+            for snippet in fetched_transcript:
+                start = int(snippet.start)
                 minutes, seconds = divmod(start, 60)
-                timestamps.append(f"{minutes}:{seconds:02d} - {line['text']}")
+                timestamps.append(f"{minutes}:{seconds:02d} - {snippet.text}")
             return timestamps
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error generating timestamps: {str(e)}")
