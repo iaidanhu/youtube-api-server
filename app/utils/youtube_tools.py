@@ -133,11 +133,11 @@ class YouTubeTools:
                 ytt_api = YouTubeTranscriptApi()
             
             fetched_transcript = ytt_api.fetch(video_id, languages=languages or ["en"])
-            timestamps = []
-            for snippet in fetched_transcript:
-                start = int(snippet.start)
-                minutes, seconds = divmod(start, 60)
-                timestamps.append(f"{minutes}:{seconds:02d} - {snippet.text}")
-            return timestamps
+            # timestamps = []
+            # for snippet in fetched_transcript:
+            #     start = int(snippet.start)
+            #     minutes, seconds = divmod(start, 60)
+            #     timestamps.append(f"{minutes}:{seconds:02d} - {snippet.text}")
+            return fetched_transcript.to_raw_data()
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error generating timestamps: {str(e)}")
