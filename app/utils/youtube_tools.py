@@ -8,7 +8,15 @@ from fastapi import HTTPException
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.proxies import WebshareProxyConfig
 
+from app.utils.memory_cache import cache
+
 class YouTubeTools:
+    @staticmethod
+    def _get_cache_key(url: str, func_name: str, languages: Optional[List[str]] = None):
+        """Generate a cache key based on URL, function name, and languages"""
+        lang_str = "_" + "_".join(sorted(languages)) if languages else ""
+        return f"{func_name}:{url}{lang_str}"
+    
     @staticmethod
     def get_youtube_video_id(url: str) -> Optional[str]:
         """Function to get the video ID from a YouTube URL."""
@@ -32,6 +40,14 @@ class YouTubeTools:
         """Function to get video data from a YouTube URL."""
         if not url:
             raise HTTPException(status_code=400, detail="No URL provided")
+        
+        # Generate cache key
+        cache_key = YouTubeTools._get_cache_key(url, "video_data")
+        
+        # Try to get from cache first
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
 
         try:
             video_id = YouTubeTools.get_youtube_video_id(url)
@@ -61,6 +77,10 @@ class YouTubeTools:
                     "provider_url": video_data.get("provider_url"),
                     "thumbnail_url": video_data.get("thumbnail_url"),
                 }
+                
+                # Cache the result before returning
+                cache.set(cache_key, clean_data)
+                
                 return clean_data
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error getting video data: {str(e)}")
@@ -70,6 +90,14 @@ class YouTubeTools:
         """Get captions from a YouTube video."""
         if not url:
             raise HTTPException(status_code=400, detail="No URL provided")
+        
+        # Generate cache key
+        cache_key = YouTubeTools._get_cache_key(url, "video_captions", languages)
+        
+        # Try to get from cache first
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
 
         try:
             video_id = YouTubeTools.get_youtube_video_id(url)
@@ -99,8 +127,14 @@ class YouTubeTools:
                 fetched_transcript = ytt_api.fetch(video_id)
             
             if fetched_transcript:
-                return " ".join(snippet.text for snippet in fetched_transcript)
-            return "No captions found for video"
+                result = " ".join(snippet.text for snippet in fetched_transcript)
+            else:
+                result = "No captions found for video"
+            
+            # Cache the result before returning
+            cache.set(cache_key, result)
+            
+            return result
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error getting captions for video: {str(e)}")
 
@@ -109,6 +143,14 @@ class YouTubeTools:
         """Generate timestamps for a YouTube video based on captions."""
         if not url:
             raise HTTPException(status_code=400, detail="No URL provided")
+        
+        # Generate cache key
+        cache_key = YouTubeTools._get_cache_key(url, "video_timestamps", languages)
+        
+        # Try to get from cache first
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
 
         try:
             video_id = YouTubeTools.get_youtube_video_id(url)
@@ -133,11 +175,11 @@ class YouTubeTools:
                 ytt_api = YouTubeTranscriptApi()
             
             fetched_transcript = ytt_api.fetch(video_id, languages=languages or ["en"])
-            # timestamps = []
-            # for snippet in fetched_transcript:
-            #     start = int(snippet.start)
-            #     minutes, seconds = divmod(start, 60)
-            #     timestamps.append(f"{minutes}:{seconds:02d} - {snippet.text}")
-            return fetched_transcript.to_raw_data()
+            result = fetched_transcript.to_raw_data()
+            
+            # Cache the result before returning
+            cache.set(cache_key, result)
+            
+            return result
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error generating timestamps: {str(e)}")

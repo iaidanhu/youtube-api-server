@@ -9,6 +9,9 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8000
+      - BACKEND_CORS_ORIGINS=*
+      - CACHE_DEFAULT_TTL=3600
+      - RATE_LIMIT=100/hour
       - LOG_LEVEL=INFO
     volumes:
       - ./app:/app/app
