@@ -143,3 +143,45 @@ class YouTubeTools:
             return result
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error generating timestamps: {str(e)}")
+
+    @staticmethod
+    def get_video_languages(url: str) -> List[dict]:
+        """Get available languages for a YouTube video."""
+        if not url:
+            raise HTTPException(status_code=400, detail="No URL provided")
+
+        try:
+            video_id = YouTubeTools.get_youtube_video_id(url)
+            if not video_id:
+                raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Error getting video ID from URL")
+
+        try:
+            # Initialize API with proxy configuration from settings
+            proxy_username = settings.PROXY_USERNAME
+            proxy_password = settings.PROXY_PASSWORD
+            
+            if proxy_username and proxy_password:
+                ytt_api = YouTubeTranscriptApi(
+                    proxy_config=WebshareProxyConfig(
+                        proxy_username=proxy_username,
+                        proxy_password=proxy_password,
+                    )
+                )
+            else:
+                ytt_api = YouTubeTranscriptApi()
+            
+            transcript_list = ytt_api.list(video_id)
+            languages = []
+            for transcript in transcript_list:
+                languages.append({
+                    "language": transcript.language,
+                    "language_code": transcript.language_code,
+                    "is_generated": transcript.is_generated,
+                    "is_translatable": transcript.is_translatable,
+                    "translation_languages": transcript.translation_languages
+                })
+            return languages
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error getting languages for video: {str(e)}")

@@ -23,3 +23,8 @@ async def get_video_captions(request: YouTubeRequest):
 async def get_video_timestamps(request: YouTubeRequest):
     """Endpoint to get video timestamps"""
     return YouTubeTools.get_video_timestamps(request.url, request.languages)
+
+@router.post("/video-languages")
+async def get_video_languages(request: YouTubeRequest):
+    """Endpoint to get available video languages"""
+    return YouTubeTools.get_video_languages(request.url)
